@@ -1,84 +1,216 @@
-# Grub_Dash_Front_End
+# GrubDash Server (Express API)
 
-A React front-end for a fictional food delivery app, adapted for personal learning and practice.
-
-* Repo: [https://github.com/Ying-Fiona-Zhou/Grub\_Dash\_Front\_End](https://github.com/Ying-Fiona-Zhou/Grub_Dash_Front_End)
+An Express-based REST API that powers the GrubDash demo front end.
 
 ## Table of Contents
 
-* [Features](#features)
 * [Prerequisites](#prerequisites)
-* [Installation](#installation)
-* [Environment Variables (important)](#environment-variables-important)
-* [Running the App](#running-the-app)
-* [Production Build](#production-build)
+* [Quick Start (Monorepo)](#quick-start-monorepo)
+* [Installation (Server only)](#installation-server-only)
+* [Configuration](#configuration)
+* [Run Scripts](#run-scripts)
+* [API Reference](#api-reference)
+* [CORS](#cors)
 * [Project Structure](#project-structure)
-* [Contributing](#contributing)
+* [Troubleshooting](#troubleshooting)
 * [Attribution & License](#attribution--license)
-
-## Features
-
-* Browse items, add to cart, and place orders (UI only).
-* Responsive layout.
-* REST API integration via a configurable base URL.
 
 ## Prerequisites
 
-* **Node.js ≥ 18** (older `react-scripts` can use Node 16).
-* Recommended: **`react-scripts@5.0.1`**.
+* Node.js ≥ 18
 
-## Installation
+## Quick Start (Monorepo)
+
+From the repo root `grubdash/`:
 
 ```bash
-git clone https://github.com/Ying-Fiona-Zhou/Grub_Dash_Front_End.git
-cd Grub_Dash_Front_End
+# Terminal A – start API (server)
+cd server
+PORT=5005 npm start      # -> http://localhost:5005
+
+# Terminal B – start client
+cd ../client
+echo "REACT_APP_API_BASE_URL=http://localhost:5005" > .env
+npm start                # -> http://localhost:3000
+```
+
+## Installation (Server only)
+
+```bash
+cd server
 npm install
 ```
 
-## Environment Variables (important)
+## Configuration
 
-Create a `.env` file in the project root (Create React App only injects variables starting with `REACT_APP_`):
+* **PORT**: HTTP port for the API (default `5000`).
 
-```env
-REACT_APP_API_BASE_URL=http://localhost:5000
+  ```bash
+  PORT=5005 npm start
+  ```
+
+## Run Scripts
+
+Defined in `server/package.json`:
+
+```json
+{
+  "scripts": {
+    "start": "node src/server.js",
+    "start:5005": "PORT=5005 node src/server.js",
+    "dev": "PORT=5005 nodemon src/server.js",
+    "test": "jest"
+  }
+}
 ```
 
-> Restart `npm start` after editing `.env`.
-
-## Running the App
+Common usage:
 
 ```bash
-npm start
+npm run start:5005   # start on port 5005
+npm run dev          # start with nodemon (auto-restart)
 ```
 
-Dev server at [http://localhost:3000](http://localhost:3000).
+## API Reference
 
-## Production Build
+Base URL: `http://localhost:<PORT>` (examples below assume `PORT=5005`).
+
+### GET /dishes
+
+List all dishes.
 
 ```bash
-npm run build
-npx serve -s build
+curl http://localhost:5005/dishes
+```
+
+**200 OK**
+
+```json
+[
+  { "id": "1", "name": "Spaghetti", "price": 1200, "description": "..." },
+  { "id": "2", "name": "Pizza", "price": 1500, "description": "..." }
+]
+```
+
+### GET /orders
+
+List all orders.
+
+```bash
+curl http://localhost:5005/orders
+```
+
+**200 OK**
+
+```json
+[
+  { "id": "A1", "deliverTo": "123 Main St", "status": "pending", "dishes": [/*...*/] }
+]
+```
+
+### POST /orders
+
+Create a new order.
+
+```bash
+curl -X POST http://localhost:5005/orders \
+  -H "Content-Type: application/json" \
+  -d '{
+    "data": {
+      "deliverTo": "123 Main St",
+      "mobileNumber": "555-555-5555",
+      "status": "pending",
+      "dishes": [
+        { "id": "1", "quantity": 2 }
+      ]
+    }
+  }'
+```
+
+**201 Created** with the created order.
+
+### GET /orders/\:orderId
+
+Fetch a single order.
+
+```bash
+curl http://localhost:5005/orders/A1
+```
+
+### PUT /orders/\:orderId
+
+Update an order (e.g., address, dishes, or status).
+
+```bash
+curl -X PUT http://localhost:5005/orders/A1 \
+  -H "Content-Type: application/json" \
+  -d '{ "data": { "status": "preparing" } }'
+```
+
+### DELETE /orders/\:orderId
+
+Delete an order (typically allowed only when `status` is `pending`).
+
+```bash
+curl -X DELETE http://localhost:5005/orders/A1
+```
+
+> **Notes**
+>
+> * Request/response bodies use a `{ "data": ... }` envelope.
+> * Validation and error responses follow the error handler’s shape:
+>
+>   ```json
+>   { "error": "Message explaining what went wrong" }
+>   ```
+
+## CORS
+
+CORS is enabled globally in `src/app.js`:
+
+```js
+const cors = require("cors");
+app.use(cors());
+```
+
+This allows requests from the client dev server ([http://localhost:3000](http://localhost:3000) or 3001).
+If you prefer a whitelist during development:
+
+```js
+app.use(cors({ origin: ["http://localhost:3000", "http://localhost:3001"] }));
+app.options("*", cors());
 ```
 
 ## Project Structure
 
 ```
-public/           # static assets incl. index.html
-src/              # React source
-  components/     # reusable UI components
-  utils/          # helper functions
+server/
+  src/
+    app.js               # Express app (CORS, JSON, routers, error handlers)
+    server.js            # Entry point (reads PORT and starts the server)
+    dishes/              # /dishes routes & controller
+    orders/              # /orders routes & controller
+    errors/              # notFound + errorHandler
+    utils/               # helpers
 ```
 
-## Contributing
+## Troubleshooting
 
-PRs and issues are welcome (docs, accessibility, tests). Please keep upstream attribution.
+* **Port already in use**
+
+  ```bash
+  lsof -iTCP:5005 -sTCP:LISTEN -n -P
+  kill -9 <PID>
+  PORT=5005 npm start
+  ```
+* **Client shows “Failed to fetch”**
+
+  * Ensure API is running (visit `http://localhost:5005/dishes`).
+  * In `client/.env`, set `REACT_APP_API_BASE_URL=http://localhost:5005` and **restart** `npm start`.
+  * Keep `app.use(cors())` enabled.
 
 ## Attribution & License
 
-Adapted from:
-
-* Original template: [https://github.com/Thinkful-Ed/starter-grub-dash-front-end](https://github.com/Thinkful-Ed/starter-grub-dash-front-end)
-
-Upstream code remains under its **original license** (see upstream LICENSE).
-Your modifications in this repo are provided under the **same license**, unless otherwise noted.
-**Credit:** Adapted and maintained by **Ying Zhou (Ying-Fiona-Zhou)**.
+This server is part of the GrubDash learning project.
+Upstream concepts/routes are adapted from Thinkful course material.
+Your modifications follow the same license as the upstream unless otherwise noted.

@@ -1,57 +1,101 @@
-# GrubDash Front-End
+# GrubDash Client (React)
 
-GrubDash is a fictional food delivery platform that allows users to order food online. This project serves as the front-end component for the GrubDash application.
+A React front end for the GrubDash demo app. It renders the UI and talks to the API server in `../server`.
 
 ## Table of Contents
-- [Features](#features)
-- [Installation](#installation)
-- [Configuration](#configuration)
-- [Running the App](#running-the-app)
-- [Project Structure](#project-structure)
-- [Contributing](#contributing)
-- [License](#license)
+
+* [Features](#features)
+* [Prerequisites](#prerequisites)
+* [Quick Start (Monorepo)](#quick-start-monorepo)
+* [Installation (Client only)](#installation-client-only)
+* [Configuration](#configuration)
+* [Running the App](#running-the-app)
+* [Production Build](#production-build)
+* [Project Structure](#project-structure)
+* [Attribution & License](#attribution--license)
 
 ## Features
-- **Food Ordering**: Users can browse food items, add them to the cart, and place orders.
-- **Responsive Design**: Works seamlessly across devices (desktop, tablet, mobile).
-- **API Integration**: Uses a RESTful API to manage and retrieve data.
-  
-## Installation
 
-To set up the project locally, follow these steps:
+* Browse items, add to cart, and place orders (demo UI)
+* Responsive layout (desktop/tablet/mobile)
+* Configurable API base URL via environment variable
 
-1. **Fork/Clone the Repository**  
-   ```
-   git clone https://github.com/Thinkful-Ed/starter-grub-dash-front-end.git
-   ```
+## Prerequisites
 
-2. **Install Dependencies**  
-   Navigate to the project directory and run:
-   ```
-   npm install
-   ```
+* Node.js ≥ 18
+* A running API server from `../server` (examples below use port **5005**)
+
+## Quick Start (Monorepo)
+
+From the repo root `grubdash/`:
+
+```bash
+# Terminal A – start API (server)
+cd server
+PORT=5005 npm start      # -> http://localhost:5005
+
+# Terminal B – start client
+cd ../client
+echo "REACT_APP_API_BASE_URL=http://localhost:5005" > .env
+npm start                # -> http://localhost:3000
+```
+
+> If your API runs on port 5000 instead, set `REACT_APP_API_BASE_URL=http://localhost:5000`.
+
+## Installation (Client only)
+
+```bash
+cd client
+npm install
+```
 
 ## Configuration
 
-The application expects an environment variable for the API base URL:
-- `API_BASE_URL`: Set this to the URL of your back-end server. If not set, the app defaults to `http://localhost:5000`.
+Create a `.env` file in the **client** root.
+**Create React App only injects variables starting with `REACT_APP_`.**
 
-You can create a `.env` file to set the variable locally:
+```env
+# Example: API on port 5005
+REACT_APP_API_BASE_URL=http://localhost:5005
+
+# Or, if your API uses the default 5000:
+# REACT_APP_API_BASE_URL=http://localhost:5000
 ```
-API_BASE_URL=http://your-api-url-here
-```
+
+> After editing `.env`, stop and restart `npm start` for changes to take effect.
 
 ## Running the App
 
-To start the app in development mode, use:
-```
+```bash
 npm start
 ```
-This will run the app on [http://localhost:3000](http://localhost:3000).
+
+The app runs at [http://localhost:3000](http://localhost:3000) and sends all API requests to `REACT_APP_API_BASE_URL`.
+
+## Production Build
+
+```bash
+npm run build
+# (optional) preview locally:
+npx serve -s build
+```
 
 ## Project Structure
 
-- **`/public`**: Static files like HTML and images.
-- **`/src`**: Source code, including React components, styles, and utility files.
-- **`/src/components`**: Contains reusable UI components.
-- **`/src/utils`**: Helper functions and utilities.
+```
+client/
+  public/           # static assets incl. index.html
+  src/              # React source
+    components/     # reusable UI components
+    utils/          # helpers (e.g., API utilities)
+```
+
+## Attribution & License
+
+This client is adapted from the Thinkful starter template:
+
+* Original template: [https://github.com/Thinkful-Ed/starter-grub-dash-front-end](https://github.com/Thinkful-Ed/starter-grub-dash-front-end)
+
+Upstream code remains under its original license (see the upstream LICENSE).
+Modifications in this folder follow the same license unless otherwise noted.
+Maintainer: **Ying Zhou (Ying-Fiona-Zhou)**.
